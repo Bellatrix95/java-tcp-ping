@@ -1,13 +1,16 @@
 package main.java.com.company;
 
+import javax.imageio.IIOException;
 import java.net.*;
 import java.io.*;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.logging.Logger;
 
 public class Catcher {
 
     private ServerSocket serverSocket;
+    private static final Logger log = Logger.getLogger("Catcher");
 
     public void start(String bind, int numOfConnections, int port) throws IOException {
         serverSocket = new ServerSocket(port, numOfConnections,InetAddress.getByName(bind));
@@ -33,30 +36,29 @@ public class Catcher {
             try {
                 out = new DataOutputStream(clientSocket.getOutputStream());
                 in = new DataInputStream(clientSocket.getInputStream());
+
+                if(in.readChar() != 'b') {
+                    log.warning("Catcher can only read byte type messages!");
+                    return;
+                }
+
+                byte[] messageBytes = new byte[in.readInt()];
+                in.readFully(messageBytes);
                 long receivedOnB = ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli();
 
-                char dataType = in.readChar();
-                int length = in.readInt();
-
-                if(dataType == 'b') {
-                    byte[] messageBytes = new byte[length];
-                    in.readFully(messageBytes);
-
-                    Message message = new Message(messageBytes);
-                    message.setReceivedOnB(receivedOnB);
-                    message.setSendToA(ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli());
-                    out.writeChar('b');
-                    out.writeInt(length);
-                    out.write(message.createByteArrayFromMessage(length));
-                }
+                Message message = new Message(messageBytes);
+                message.setReceivedOnB(receivedOnB);
+                message.setSendToA(ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli());
+                out.writeChar('b');
+                out.writeInt(messageBytes.length);
+                out.write(message.createByteArrayFromMessage(messageBytes.length));
 
                 in.close();
                 out.close();
                 clientSocket.close();
             } catch (IOException e) {
-                e.printStackTrace();
+                log.warning("Exception occurred while handling incoming message!");
             }
-
         }
     }
 }
