@@ -11,6 +11,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 
 public class Pitcher {
@@ -34,24 +35,28 @@ public class Pitcher {
     }
 
     public void startProducing(int messageSize, int messagesPerSecond) {
+        final RateLimiter rateLimiter = RateLimiter.create(messagesPerSecond); // rate is "mps permits per second";
         int orderNum = 0;
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy - HH:mm:ss z");
         Analysis analyzePastTimeFrame = new Analysis();
-        RateLimiter rateLimiter = RateLimiter.create(messagesPerSecond); // rate is "mps permits per second";
         ExecutorService service = Executors.newCachedThreadPool();
 
         while (true) {
-            ZonedDateTime startTime = ZonedDateTime.now(ZoneId.of("UTC"));
-            log.info("START TIME: " + startTime.format(formatter));
-            if (orderNum != 0) log.info("Analyze network traffic for previous second: " +  analyzePastTimeFrame.getNetworkStats());
-            analyzePastTimeFrame = new Analysis();
+            if(orderNum%messagesPerSecond == 0) {
+                System.out.println(orderNum + " ---- " + messagesPerSecond);
+                ZonedDateTime startTime = ZonedDateTime.now(ZoneId.of("UTC"));
+                if (orderNum != 0) log.info("Analyze network traffic for previous second: " +  analyzePastTimeFrame.getNetworkStats());
+                log.info("START TIME: " + startTime.format(formatter));
+                analyzePastTimeFrame = new Analysis();
+            }
+
             orderNum++;
 
+            //has a bug related to rateLimiter
             try {
+                rateLimiter.tryAcquire(500, TimeUnit.MILLISECONDS);
+                System.out.println("aaaaa dode li ikako");
                 this.startConnection();
-
-                //has a bug related to reteLimiter
-                rateLimiter.tryAcquire(messagesPerSecond, 1, TimeUnit.SECONDS);
                 Message message =  new Message(orderNum, ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli());
                 analyzePastTimeFrame.newMessageSent();
                 byte[] response = sendSingleMessage(message.createByteArrayFromMessage(messageSize));
@@ -63,9 +68,7 @@ public class Pitcher {
             } catch (IOException e) {
                 log.warning("Iteration step failed!");
             }
-            long elapsedTimeSeconds = ZonedDateTime.now(ZoneId.of("UTC")).getSecond() - startTime.getSecond();
-
-            System.out.println("start time - " + startTime.format(formatter) + " -----  " + elapsedTimeSeconds);
+            if (orderNum == 5) break;
         }
     }
 
@@ -89,4 +92,5 @@ public class Pitcher {
         out.close();
         clientSocket.close();
     }
+
 }

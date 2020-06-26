@@ -4,10 +4,11 @@ import java.util.logging.Logger;
 
 public class Main {
 
-    private static final Logger log = Logger.getLogger("Main");
-
     public static void main(String[] args) {
 
+        System.setProperty("java.util.logging.SimpleFormatter.format",
+                "%4$s %5$s%6$s%n");
+        final Logger log = Logger.getLogger("Main");
         log.info("Starting application `java-tcp-ping` !");
 
         boolean isPitcher = true;
@@ -16,7 +17,7 @@ public class Main {
         if (isPitcher) {
             String hostname = "127.0.0.1";
             int messageSize = 50;
-            int messagesPerSecond = 2;
+            int messagesPerSecond = 1;
             try {
                 Pitcher client = new Pitcher(hostname, port);
                 client.startProducing(messageSize, messagesPerSecond);
