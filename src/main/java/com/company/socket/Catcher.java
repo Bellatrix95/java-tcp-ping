@@ -1,6 +1,5 @@
-package main.java.com.company;
+package main.java.com.company.socket;
 
-import javax.imageio.IIOException;
 import java.net.*;
 import java.io.*;
 import java.time.ZoneId;
@@ -34,8 +33,7 @@ public class Catcher {
 
         public void run() {
             try {
-                out = new DataOutputStream(clientSocket.getOutputStream());
-                in = new DataInputStream(clientSocket.getInputStream());
+                this.startConnection();
 
                 if(in.readChar() != 'b') {
                     log.warning("Catcher can only read byte type messages!");
@@ -53,12 +51,21 @@ public class Catcher {
                 out.writeInt(messageBytes.length);
                 out.write(message.createByteArrayFromMessage(messageBytes.length));
 
-                in.close();
-                out.close();
-                clientSocket.close();
+                this.stopConnection();
             } catch (IOException e) {
                 log.warning("Exception occurred while handling incoming message!");
             }
+        }
+
+        public void startConnection() throws IOException {
+            out = new DataOutputStream(clientSocket.getOutputStream());
+            in = new DataInputStream(clientSocket.getInputStream());
+        }
+
+        public void stopConnection() throws IOException {
+            in.close();
+            out.close();
+            clientSocket.close();
         }
     }
 }

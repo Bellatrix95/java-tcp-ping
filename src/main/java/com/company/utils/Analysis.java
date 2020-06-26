@@ -1,11 +1,14 @@
 package main.java.com.company.utils;
 
-import main.java.com.company.Message;
+import main.java.com.company.socket.Message;
+
+import java.time.ZonedDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 
 public class Analysis {
+    private long startTime = ZonedDateTime.now().getSecond();
     private int messagesSend = 0;
     private int messagesReceived = 0;
     private int sumAB;
@@ -17,6 +20,9 @@ public class Analysis {
     }
 
     public void newMessageReceived(Message message) {
+        //if one second time frame passes, don't add massage because new analysis has been started
+        if(ZonedDateTime.now().getSecond() - startTime > 1) return;
+
         this.messagesReceived++;
         this.sumAB += (message.getReceivedOnB() - message.getSendToB());
         this.sumBA += (message.getReceivedOnA() - message.getSendToA());
@@ -29,9 +35,9 @@ public class Analysis {
         networkStats.put("messagesSend", this.messagesSend);
         networkStats.put("messagesLost", this.messagesSend - this.messagesReceived);
         networkStats.put("maxTimeABA", this.maxABA);
-        networkStats.put("averageTimeAB", ((float) sumAB / (float) messagesReceived));
-        networkStats.put("averageTimeBA", ((float) sumBA / (float) messagesReceived));
-        networkStats.put("averageTimeABA", ((float) (sumAB + sumBA) / (float) messagesReceived));
+        networkStats.put("averageTimeAB", ((float) sumAB / messagesReceived));
+        networkStats.put("averageTimeBA", ((float) sumBA / messagesReceived));
+        networkStats.put("averageTimeABA", ((float) (sumAB + sumBA) / messagesReceived));
 
         return networkStats;
     }

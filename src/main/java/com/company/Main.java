@@ -1,5 +1,8 @@
 package main.java.com.company;
 
+import main.java.com.company.socket.Catcher;
+import main.java.com.company.socket.Pitcher;
+
 import java.util.logging.Logger;
 
 public class Main {
@@ -17,10 +20,10 @@ public class Main {
         if (isPitcher) {
             String hostname = "127.0.0.1";
             int messageSize = 50;
-            int messagesPerSecond = 1;
+            int messagesPerSecond = 4;
             try {
                 Pitcher client = new Pitcher(hostname, port);
-                client.startProducing(messageSize, messagesPerSecond);
+                client.startProducing(messagesPerSecond, messageSize);
             } catch (Exception e) {
                 e.printStackTrace();
             }

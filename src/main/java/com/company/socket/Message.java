@@ -1,18 +1,21 @@
-package main.java.com.company;
+package main.java.com.company.socket;
 
 import main.java.com.company.utils.ByteArray;
 
 import java.io.Serializable;
 
 public class Message implements Serializable {
+    private static int generalOrderNum = 0;
     private int orderNumber;
     private long sendToB;
     private long receivedOnB;
     private long sendToA;
     private long receivedOnA;
 
-    public Message (int orderNumber, long sendToB) {
-        this.orderNumber = orderNumber;
+
+    public Message (long sendToB) {
+        generalOrderNum++;
+        this.orderNumber = generalOrderNum;
         this.sendToB = sendToB;
     }
 
@@ -24,6 +27,10 @@ public class Message implements Serializable {
         this.receivedOnA = ByteArray.readLong(byteArray,28);
         //the rest of the bytes in the byteArray are randomly generated
 
+    }
+
+    public static int getGeneralOrderNum() {
+        return generalOrderNum;
     }
 
     public int getOrderNumber() {
@@ -66,7 +73,6 @@ public class Message implements Serializable {
         byteArray.writeLong(this.getReceivedOnB());
         byteArray.writeLong(this.getSendToA());
         byteArray.writeLong(this.getReceivedOnA());
-
 
         int size = byteArray.getLength();
 
