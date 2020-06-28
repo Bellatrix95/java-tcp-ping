@@ -28,10 +28,10 @@ You can verify the version is installed and running:
 
 The application can be started in two modes: as a Pitcher or as a Catcher. 
 
-Arguments mandatory for starting *Pitcher* are listed in the table below:
+Arguments mandatory for starting **Pitcher** are listed in the table below:
 
 | Parameter | Value | Description 
-| -----  | -----  | -----   | ----- 
+| -----  | -----   | ----- 
 | p | none | Flag used for starting Pitcher
 | hostname | localhost |  Socket server port IP address
 | port | 3000 | Socket server port
@@ -40,15 +40,15 @@ Arguments mandatory for starting *Pitcher* are listed in the table below:
 | port | 3000 | Socket server port
 
 
-Arguments mandatory for starting *Catcher* are listed in the table below:
+Arguments mandatory for starting **Catcher** are listed in the table below:
 
 | Parameter | Value | Description 
-| -----  | -----  | -----   | ----- 
+| -----  | -----   | ----- 
 | c | none | Flag used for starting Catcher
 | bind | localhost | Socket server port IP address
 | port | 3000 | Socket server port
 
 Example commands:
 
-    $ java main.java.com.company.Main -p -h "localhost" -port 6000 -mps 2 -size 50
-    $ java main.java.com.company.Main -c -b "localhost" -port 6000
+    $ java main.java.com.company.Main -c -b localhost -port 6000
+    $ java main.java.com.company.Main -p -h localhost -port 6000 -mps 2 -size 50
