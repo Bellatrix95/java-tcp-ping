@@ -6,7 +6,11 @@ import java.time.ZonedDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-
+/**
+ * Class containing network statistics information for one-second time frame
+ *
+ * @author Ivana Salmanić
+ */
 public class Analysis {
     private long startTime = ZonedDateTime.now().getSecond();
     private int messagesSend = 0;
@@ -19,8 +23,11 @@ public class Analysis {
         this.messagesSend++;
     }
 
+    /**
+     * @param message response message from socket server
+     */
     public void newMessageReceived(Message message) {
-        //if one second time frame passes, don't add massage because new analysis has been started
+        //if one second time frame passes, don't add massage because new time frame has been started
         if(ZonedDateTime.now().getSecond() - startTime > 1) return;
 
         this.messagesReceived++;
@@ -30,8 +37,11 @@ public class Analysis {
         if (sumABA > this.maxABA) this.maxABA = sumABA;
     }
 
+    /**
+     * @return network statistics for passed time frame
+     */
     public Map<String, Object> getNetworkStats() {
-        Map<String, Object> networkStats = new LinkedHashMap<String, Object>();
+        Map<String, Object> networkStats = new LinkedHashMap<>();
         networkStats.put("messagesSend", this.messagesSend);
         networkStats.put("messagesLost", this.messagesSend - this.messagesReceived);
         networkStats.put("maxTimeABA", this.maxABA);

@@ -2,6 +2,12 @@ package main.java.com.company.utils;
 
 import java.util.Random;
 
+/**
+ * Helper class for parsing and retrieving different data types from byte arrays.
+ *
+ * @author Ivana Salmanić
+ */
+
 public final class ByteArray {
     private byte[] data;
     private int length;

@@ -8,49 +8,85 @@ import java.io.*;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.logging.Logger;
 
+/**
+ * Socket client class for sending byte massages to socket server.
+ *
+ * @author Ivana Salmanić
+ */
 public class Pitcher {
-    private String hostname;
-    private int port;
     private static final Logger log = Logger.getLogger("Pitcher");
 
-    public Pitcher(String hostname, int port){
-        this.hostname = hostname;
-        this.port = port;
+    /**
+     * @param hostname socket server hostname
+     * @param port socket server port number
+     * @param messageSize message size in bytes
+     */
+    public Pitcher(String hostname, int port, int messageSize){
+
+        MessageHandler.setStaticParams(hostname, port, messageSize);
     }
 
-    public void startProducing(int messagesPerSecond, int messageSize) {
-        final RateLimiter rateLimiter = RateLimiter.create(messagesPerSecond); // rate is "mps permits per second";
+    /**
+     * @param messagesPerSecond number of messages per second
+     */
+    public void startProducing(int messagesPerSecond) {
+        // rate is "messagesPerSecond permits per second";
+        final RateLimiter rateLimiter = RateLimiter.create(messagesPerSecond);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy - HH:mm:ss z");
-        MessageHandler.resetAnalysisParameter();
+        StringBuilder formatForLog;
+        int lastTimeFrameOrderNum = 0;
 
         while(true) {
             rateLimiter.acquire();
-            if(Message.getGeneralOrderNum() % messagesPerSecond == 0) {
-                ZonedDateTime startTime = ZonedDateTime.now(ZoneId.of("UTC"));
-                if (Message.getGeneralOrderNum() != 0) log.info("Network traffic analysis for previous second: " +  MessageHandler.getAnalysisParameter().getNetworkStats());
-                log.info("START TIME: " + startTime.format(formatter));
+            int logTimeFrameStats = Message.getGeneralOrderNum();
+            if(logTimeFrameStats != 0 && logTimeFrameStats % messagesPerSecond == 0 && logTimeFrameStats != lastTimeFrameOrderNum) {
+
+                formatForLog = new StringBuilder(ZonedDateTime.now(ZoneId.of("UTC")).minusSeconds(1).format(formatter)).append(" : ");
+                log.info(parseStatsObject(formatForLog));
                 MessageHandler.resetAnalysisParameter();
+                lastTimeFrameOrderNum = logTimeFrameStats;
             }
-            new MessageHandler(hostname, port, messageSize).start();
+            new Thread(new MessageHandler()).start();
         }
     }
 
-    private static class MessageHandler extends Thread {
+    /**
+     * @return String value containing statistics for past time-frame
+     */
+    private String parseStatsObject(StringBuilder formatForLog) {
+        Map<String, Object> statsForLastTimeFrame = MessageHandler.getAnalysisParameter().getNetworkStats();
+        Iterator<String> iterate = statsForLastTimeFrame.keySet().iterator();
+
+        while(iterate.hasNext()) {
+            String key = iterate.next();
+            formatForLog.append(key).append("=").append(statsForLastTimeFrame.get(key)).append("  ");
+        }
+        return formatForLog.toString();
+    }
+
+    private static class MessageHandler implements Runnable {
         private Socket clientSocket;
         private DataOutputStream out;
         private DataInputStream in;
         private static Analysis analyzePastTimeFrame;
         private static String hostname;
         private static int port;
-        int messageSize;
+        private static int messageSize;
 
-
-        public MessageHandler(String hostname, int port, int messageSize){
-            this.hostname = hostname;
-            this.port = port;
-            this.messageSize = messageSize;
+        /**
+         * @param hostname socket server hostname
+         * @param port socket server port number
+         * @param messageSize message size in bytes
+         */
+        public static void setStaticParams(String hostname, int port, int messageSize) {
+            MessageHandler.hostname = hostname;
+            MessageHandler.port = port;
+            MessageHandler.messageSize = messageSize;
+            MessageHandler.analyzePastTimeFrame = new Analysis();
         }
 
         public void run() {
@@ -65,10 +101,15 @@ public class Pitcher {
 
                 this.stopConnection();
             } catch (IOException e) {
-                log.warning("Exception occurred while sending a message!");
+                //log.warning("Exception occurred while sending a message!");
             }
         }
 
+        /**
+         * Sends message in TLV format (Type Length Value) to socket server and reads response
+         * @param codedMessage message object parsed to byte array
+         * @return byte array response value from input stream
+         */
         private byte[] sendSingleMessage(byte[] codedMessage) throws IOException {
 
             //Sending data in TLV format
@@ -80,17 +121,16 @@ public class Pitcher {
             if(codedMessage.length != in.readInt()) log.warning("Length of messages does not match!");
             byte[] response = new byte[codedMessage.length];
             in.readFully(response);
-
             return response;
         }
 
-        public void startConnection() throws IOException {
+        private void startConnection() throws IOException {
             clientSocket = new Socket(hostname, port);
             out = new DataOutputStream(clientSocket.getOutputStream());
             in = new DataInputStream(clientSocket.getInputStream());
         }
 
-        public void stopConnection() throws IOException {
+        private void stopConnection() throws IOException {
             in.close();
             out.close();
             clientSocket.close();
@@ -100,6 +140,9 @@ public class Pitcher {
             analyzePastTimeFrame = new Analysis();
         }
 
+        /**
+         * @return Analysis statistics for past time-frame
+         */
         public static Analysis getAnalysisParameter() {
             return analyzePastTimeFrame;
         }
