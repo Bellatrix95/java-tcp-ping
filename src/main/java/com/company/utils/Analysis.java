@@ -23,9 +23,7 @@ public class Analysis {
     /**
      * @param orderNum the message identification number
      */
-    public void newMessageSent(int orderNum) {
-        messagesOrderNums.add(orderNum);
-    }
+    public void newMessageSent(int orderNum) { messagesOrderNums.add(orderNum); }
 
     /**
      * @param message the response message from socket server

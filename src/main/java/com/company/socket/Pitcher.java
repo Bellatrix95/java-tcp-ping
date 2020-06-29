@@ -37,15 +37,14 @@ public class Pitcher {
         // rate is "messagesPerSecond permits per second";
         final RateLimiter rateLimiter = RateLimiter.create(messagesPerSecond);
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy - HH:mm:ss z");
-        StringBuilder formatForLog;
         int lastTimeFrameOrderNum = 0;
 
         while(true) {
-            rateLimiter.acquire();
+            if(!rateLimiter.tryAcquire()) continue;
             int logTimeFrameStats = Message.getGeneralOrderNum();
             if(logTimeFrameStats != 0 && logTimeFrameStats % messagesPerSecond == 0 && logTimeFrameStats != lastTimeFrameOrderNum) {
 
-                formatForLog = new StringBuilder(ZonedDateTime.now(ZoneId.of("UTC")).minusSeconds(1).format(formatter)).append(" : ");
+                StringBuilder formatForLog = new StringBuilder(ZonedDateTime.now(ZoneId.of("UTC")).minusSeconds(1).format(formatter)).append(" : ");
                 log.info(parseStatsObject(formatForLog));
                 MessageHandler.resetAnalysisParameter();
                 lastTimeFrameOrderNum = logTimeFrameStats;
@@ -65,6 +64,7 @@ public class Pitcher {
             String key = iterate.next();
             formatForLog.append(key).append("=").append(statsForLastTimeFrame.get(key)).append("  ");
         }
+        formatForLog.append("\n");
         return formatForLog.toString();
     }
 
