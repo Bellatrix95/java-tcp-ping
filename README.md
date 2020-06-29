@@ -30,23 +30,22 @@ The application can be started in two modes: as a Pitcher or as a Catcher.
 
 Arguments mandatory for starting **Pitcher** are listed in the table below:
 
-| Parameter | Value | Description 
-| -----  | -----   | ----- 
-| p | none | Flag used for starting Pitcher
-| hostname | localhost |  Socket server port IP address
-| port | 3000 | Socket server port
-| mps | 50 | Number of messages per second. Default is set to 1 mps
-| size | 50 | Message size in byte in range (50, 3000). The default is set to 300 bytes.
-| port | 3000 | Socket server port
+| Parameter | Default | Example value |  Description 
+| -----  | -----   | ----- | ----- 
+| p | | none | Flag used for starting Pitcher
+| hostname | | localhost |  Socket server port IP address
+| port | | 3000 | Socket server port
+| mps | 1 | 50 | Number of messages per second
+| size | 300 | 50 | Message size in byte in range (50, 3000)
 
 
 Arguments mandatory for starting **Catcher** are listed in the table below:
 
-| Parameter | Value | Description 
+| Parameter | Default | Example value | Description 
 | -----  | -----   | ----- 
-| c | none | Flag used for starting Catcher
-| bind | localhost | Socket server port IP address
-| port | 3000 | Socket server port
+| c | |  | Flag used for starting Catcher
+| bind | |  localhost | Socket server port IP address
+| port | | 3000 | Socket server port
 
 Example commands:
 

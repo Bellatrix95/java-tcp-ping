@@ -30,8 +30,9 @@ public class Main {
 
                 Pitcher client = new Pitcher(commandLine.getOptionValue("h"), Integer.parseInt(commandLine.getOptionValue("port")), messageSize);
                 client.startProducing(messagesPerSecond);
+            }
 
-            } else if(commandLine.hasOption("c")) {
+            if(commandLine.hasOption("c")) {
                 log.info("The application will be started as Catcher");
 
                 Catcher server = new Catcher();

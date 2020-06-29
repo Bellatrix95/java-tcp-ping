@@ -93,7 +93,7 @@ public class Pitcher {
             try {
                 this.startConnection();
                 Message message =  new Message(ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli());
-                analyzePastTimeFrame.newMessageSent();
+                analyzePastTimeFrame.newMessageSent(message.getOrderNum());
                 byte[] response = sendSingleMessage(message.createByteArrayFromMessage(messageSize));
                 message = new Message(response);
                 message.setReceivedOnA(ZonedDateTime.now().toInstant().toEpochMilli());
@@ -125,13 +125,13 @@ public class Pitcher {
             return response;
         }
 
-        private void startConnection() throws IOException {
+        public void startConnection() throws IOException {
             clientSocket = new Socket(hostname, port);
             out = new DataOutputStream(clientSocket.getOutputStream());
             in = new DataInputStream(clientSocket.getInputStream());
         }
 
-        private void stopConnection() throws IOException {
+        public void stopConnection() throws IOException {
             in.close();
             out.close();
             clientSocket.close();

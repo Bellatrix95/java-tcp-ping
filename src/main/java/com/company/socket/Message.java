@@ -11,6 +11,7 @@ import java.io.Serializable;
  */
 public class Message implements Serializable {
     private static int generalOrderNum = 0;
+    private int orderNum;
     private long sendToB;
     private long receivedOnB;
     private long sendToA;
@@ -22,13 +23,14 @@ public class Message implements Serializable {
     public Message (long sendToB) {
         generalOrderNum++;
         this.sendToB = sendToB;
+        this.orderNum = generalOrderNum;
     }
 
     /**
      * @param byteArray containing parsed message object
      */
     public Message (byte[] byteArray) {
-        //int orderNumber = ByteArray.readInt(byteArray,0);
+        this.orderNum = ByteArray.readInt(byteArray,0);
         this.sendToB = ByteArray.readLong(byteArray,4);
         this.receivedOnB = ByteArray.readLong(byteArray,12);
         this.sendToA = ByteArray.readLong(byteArray,20);
@@ -38,6 +40,10 @@ public class Message implements Serializable {
 
     public static int getGeneralOrderNum() {
         return generalOrderNum;
+    }
+
+    public int getOrderNum() {
+        return this.orderNum;
     }
 
     public long getSendToB() {
@@ -75,7 +81,7 @@ public class Message implements Serializable {
     public byte[] createByteArrayFromMessage(int messageSize) {
         ByteArray byteArray = new ByteArray(messageSize);
 
-        byteArray.writeInt(generalOrderNum);
+        byteArray.writeInt(this.getOrderNum());
         byteArray.writeLong(this.getSendToB());
         byteArray.writeLong(this.getReceivedOnB());
         byteArray.writeLong(this.getSendToA());
