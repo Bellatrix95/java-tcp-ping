@@ -40,7 +40,7 @@ public class Pitcher {
         int lastTimeFrameOrderNum = 0;
 
         while(true) {
-            if(!rateLimiter.tryAcquire()) continue;
+            rateLimiter.acquire();
             int logTimeFrameStats = Message.getGeneralOrderNum();
             if(logTimeFrameStats != 0 && logTimeFrameStats % messagesPerSecond == 0 && logTimeFrameStats != lastTimeFrameOrderNum) {
 
