@@ -11,14 +11,13 @@ import java.time.ZonedDateTime;
 import java.util.logging.Logger;
 
 /**
- * Socket server class for handling incoming massages.
+ * Socket server class for handling incoming messages.
  *
  * @author Ivana Salmanić
  */
 
 public class Catcher {
 
-    private ServerSocket serverSocket;
     private static final Logger log = Logger.getLogger("Catcher");
 
     /**
@@ -28,14 +27,10 @@ public class Catcher {
      */
 
     public void start(String bind, int numOfConnections, int port) throws IOException {
-        serverSocket = new ServerSocket(port, numOfConnections,InetAddress.getByName(bind));
+        ServerSocket serverSocket = new ServerSocket(port, numOfConnections,InetAddress.getByName(bind));
 
         while (true)
             new Thread(new ClientHandler(serverSocket.accept())).start();
-    }
-
-    public void stop() throws IOException {
-        serverSocket.close();
     }
 
     private static class ClientHandler implements Runnable {
@@ -51,7 +46,7 @@ public class Catcher {
             try {
                 this.startConnection();
 
-                if(in.readChar() != 'b') throw new RuntimeException("Catcher can only read byte type messages!");
+                if(in.readChar() != 'b') throw new RuntimeException("The Catcher can only read byte type messages!");
 
                 byte[] messageBytes = new byte[in.readInt()];
                 in.readFully(messageBytes);

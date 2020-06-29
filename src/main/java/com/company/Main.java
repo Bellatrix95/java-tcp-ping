@@ -10,7 +10,7 @@ import static main.java.com.company.utils.ArgumentParser.checkCommandLineParams;
 
 
 public class Main {
-    final static Logger log;
+    private final static Logger log;
     static {
         System.setProperty("java.util.logging.SimpleFormatter.format",
                 "%4$s %5$s%6$s%n");
@@ -23,7 +23,7 @@ public class Main {
         try {
             CommandLine commandLine = checkCommandLineParams(args);
             if(commandLine.hasOption("p")) {
-                log.info("Application will be started as Pitcher");
+                log.info("The application will be started as Pitcher");
 
                 int messageSize = commandLine.hasOption("size") ? Integer.parseInt(commandLine.getOptionValue("size")) : 300;
                 int messagesPerSecond = commandLine.hasOption("mps") ? Integer.parseInt(commandLine.getOptionValue("mps")) : 1;
@@ -32,11 +32,10 @@ public class Main {
                 client.startProducing(messagesPerSecond);
 
             } else if(commandLine.hasOption("c")) {
-                log.info("Application will be started as Catcher");
+                log.info("The application will be started as Catcher");
 
                 Catcher server = new Catcher();
                 server.start(commandLine.getOptionValue("b"), 10, Integer.parseInt(commandLine.getOptionValue("port")));
-                server.stop();
             }
         } catch (Exception e) {
             e.printStackTrace();

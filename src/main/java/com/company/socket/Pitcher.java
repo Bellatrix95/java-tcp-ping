@@ -13,7 +13,7 @@ import java.util.Map;
 import java.util.logging.Logger;
 
 /**
- * Socket client class for sending byte massages to socket server.
+ * Socket client class for sending byte messages to socket server.
  *
  * @author Ivana Salmanić
  */
@@ -101,7 +101,8 @@ public class Pitcher {
 
                 this.stopConnection();
             } catch (IOException e) {
-                //log.warning("Exception occurred while sending a message!");
+                e.getStackTrace();
+                log.warning("Exception occurred while sending a message!");
             }
         }
 

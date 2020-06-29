@@ -7,27 +7,27 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Class containing network statistics information for one-second time frame
+ * Class containing network statistics information for the one-second time frame
  *
  * @author Ivana Salmanić
  */
 public class Analysis {
     private long startTime = ZonedDateTime.now().getSecond();
-    private int messagesSend = 0;
+    private int messagesSent = 0;
     private int messagesReceived = 0;
     private int sumAB;
     private int sumBA;
     private long maxABA;
 
     public void newMessageSent() {
-        this.messagesSend++;
+        this.messagesSent++;
     }
 
     /**
-     * @param message response message from socket server
+     * @param message the response message from socket server
      */
     public void newMessageReceived(Message message) {
-        //if one second time frame passes, don't add massage because new time frame has been started
+        //if one second time frame passes, don't add message because new time frame has been started
         if(ZonedDateTime.now().getSecond() - startTime > 1) return;
 
         this.messagesReceived++;
@@ -38,12 +38,12 @@ public class Analysis {
     }
 
     /**
-     * @return network statistics for passed time frame
+     * @return network statistics for the passed time frame
      */
     public Map<String, Object> getNetworkStats() {
         Map<String, Object> networkStats = new LinkedHashMap<>();
-        networkStats.put("messagesSend", this.messagesSend);
-        networkStats.put("messagesLost", this.messagesSend - this.messagesReceived);
+        networkStats.put("messagesSent", this.messagesSent);
+        networkStats.put("messagesLost", this.messagesSent - this.messagesReceived);
         networkStats.put("maxTimeABA", this.maxABA);
         networkStats.put("averageTimeAB", ((float) sumAB / messagesReceived));
         networkStats.put("averageTimeBA", ((float) sumBA / messagesReceived));

@@ -3,7 +3,7 @@ package main.java.com.company.utils;
 import org.apache.commons.cli.*;
 
 /**
- * Helper class for defining arguments passed to application.
+ * Helper class for defining arguments passed to the application.
  *
  * @author Ivana Salmanić
  */
@@ -40,13 +40,13 @@ public class ArgumentParser {
                 .build();
         Option messagesPerSecond = Option.builder("mps")
                 .required(false)
-                .desc("Number of messages per second. Default is set to 1 mps")
+                .desc("The number of messages per second. Default is set to 1 MPs")
                 .longOpt("mps")
                 .hasArg()
                 .build();
         Option messageSize = Option.builder("size")
                 .required(false)
-                .desc("Message size in byte in range (50,3000). Default is set to 300 bytes.")
+                .desc("Message size in byte in range (50,3000). The default is set to 300 bytes.")
                 .longOpt("size")
                 .hasArg()
                 .build();
@@ -64,8 +64,9 @@ public class ArgumentParser {
     }
 
     /**
-     * Checks if command line arguments are properly set.
+     * Checks if command-line arguments are properly set.
      * @param args application arguments
+     * @return command-line handler object
      */
     public static CommandLine checkCommandLineParams(String[] args) throws ParseException {
         CommandLineParser parser = new DefaultParser();
@@ -80,13 +81,13 @@ public class ArgumentParser {
             if (commandLine.hasOption("size")) {
                 int messageSize = Integer.parseInt(commandLine.getOptionValue("size"));
                 if (messageSize < 50 || messageSize > 3000)
-                    throw new ParseException("Message size can be in range od (50,3000)!");
+                    throw new ParseException("Message size can be in the range of (50,3000)!");
             }
         } else if (commandLine.hasOption("c")) {
 
             if (!commandLine.hasOption("b")) throw new ParseException("Bind address not set!");
         } else {
-            throw new ParseException("Application will exit, Pitcher and Catcher options aren't set! ");
+            throw new ParseException("The application will exit, Pitcher and Catcher options aren't set! ");
         }
         return commandLine;
     }

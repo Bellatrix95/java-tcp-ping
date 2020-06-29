@@ -49,7 +49,6 @@ public final class ByteArray {
     }
 
     public static void writeLong(byte[] data, int offset, long value) {
-
         for (int i = 7; i >= 0; i--) {
             data[offset + i] = (byte)(value & 0xFF);
             value >>= 8;

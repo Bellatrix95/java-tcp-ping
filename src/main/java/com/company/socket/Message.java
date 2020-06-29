@@ -17,7 +17,7 @@ public class Message implements Serializable {
     private long receivedOnA;
 
     /**
-     * @param sendToB timestamp when message was sent to Catcher
+     * @param sendToB timestamp when the message was sent to Catcher
      */
     public Message (long sendToB) {
         generalOrderNum++;
