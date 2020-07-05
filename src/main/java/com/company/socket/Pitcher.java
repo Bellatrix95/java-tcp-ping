@@ -1,108 +1,98 @@
 package main.java.com.company.socket;
 
 import com.google.common.util.concurrent.RateLimiter;
-import main.java.com.company.utils.Analysis;
+import main.java.com.company.analysis.Analysis;
+import main.java.com.company.analysis.AtomicMessageCounter;
+import main.java.com.company.messages.Message;
+import main.java.com.company.messages.MessageParser;
+import main.java.com.company.utils.LoggerClass;
 
-import java.net.*;
-import java.io.*;
+import java.io.IOException;
+import java.net.Socket;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.logging.Logger;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * Socket client class for sending byte messages to socket server.
  *
  * @author Ivana Salmanić
  */
-public class Pitcher {
-    private static final Logger log = Logger.getLogger("Pitcher");
+public class Pitcher implements IPitcher{
+    private String hostname;
+    private int port;
 
     /**
      * @param hostname socket server hostname
      * @param port socket server port number
-     * @param messageSize message size in bytes
      */
-    public Pitcher(String hostname, int port, int messageSize){
-
-        MessageHandler.setStaticParams(hostname, port, messageSize);
+    public Pitcher(String hostname, int port) {
+        this.hostname = hostname;
+        this.port = port;
     }
 
     /**
      * @param messagesPerSecond number of messages per second
+     * @param messageSize message size in bytes
      */
-    public void startProducing(int messagesPerSecond) {
+    public void start(int messagesPerSecond, int messageSize) {
         // rate is "messagesPerSecond permits per second";
         final RateLimiter rateLimiter = RateLimiter.create(messagesPerSecond);
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy - HH:mm:ss z");
-        int lastTimeFrameOrderNum = 0;
+        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(4);
+        Analysis analyzePastTimeFrame = new Analysis();
+        MessageSender.setMessageSize(messageSize);
 
         while(true) {
             rateLimiter.acquire();
-            int logTimeFrameStats = Message.getGeneralOrderNum();
-            if(logTimeFrameStats != 0 && logTimeFrameStats % messagesPerSecond == 0 && logTimeFrameStats != lastTimeFrameOrderNum) {
-
-                StringBuilder formatForLog = new StringBuilder(ZonedDateTime.now(ZoneId.of("UTC")).minusSeconds(1).format(formatter)).append(" : ");
-                log.info(parseStatsObject(formatForLog));
-                MessageHandler.resetAnalysisParameter();
-                lastTimeFrameOrderNum = logTimeFrameStats;
+            if(AtomicMessageCounter.getMessageCounter() % messagesPerSecond == 0 ) {
+                LoggerClass.log.info(LoggerClass.parseStatisticsObject(analyzePastTimeFrame.getNetworkStats()));
+                analyzePastTimeFrame = new Analysis();
             }
-            new Thread(new MessageHandler()).start();
+            try {
+                executor.execute(new MessageSender(new Socket(hostname, port), AtomicMessageCounter.incrementMessageCounterAndReturn(), analyzePastTimeFrame));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
-    /**
-     * @return String value containing statistics for past time-frame
-     */
-    private String parseStatsObject(StringBuilder formatForLog) {
-        Map<String, Object> statsForLastTimeFrame = MessageHandler.getAnalysisParameter().getNetworkStats();
-        Iterator<String> iterate = statsForLastTimeFrame.keySet().iterator();
-
-        while(iterate.hasNext()) {
-            String key = iterate.next();
-            formatForLog.append(key).append("=").append(statsForLastTimeFrame.get(key)).append("  ");
-        }
-        formatForLog.append("\n");
-        return formatForLog.toString();
-    }
-
-    private static class MessageHandler implements Runnable {
-        private Socket clientSocket;
-        private DataOutputStream out;
-        private DataInputStream in;
-        private static Analysis analyzePastTimeFrame;
-        private static String hostname;
-        private static int port;
+    private static class MessageSender extends SocketDataStream implements Runnable {
+        private Analysis analyzePastTimeFrame;
+        private int messageOrderNum;
         private static int messageSize;
 
         /**
-         * @param hostname socket server hostname
-         * @param port socket server port number
-         * @param messageSize message size in bytes
+         * @param socket socket server
+         * @param messageOrderNum message identification number
+         * @param analyzePastTimeFrame analysis object for current time frame
          */
-        public static void setStaticParams(String hostname, int port, int messageSize) {
-            MessageHandler.hostname = hostname;
-            MessageHandler.port = port;
-            MessageHandler.messageSize = messageSize;
-            MessageHandler.analyzePastTimeFrame = new Analysis();
+        MessageSender(Socket socket, int messageOrderNum, Analysis analyzePastTimeFrame) {
+            super.clientSocket = socket;
+            this.messageOrderNum = messageOrderNum;
+            this.analyzePastTimeFrame = analyzePastTimeFrame;
+        }
+
+        static void setMessageSize(int passedMessageSize) {
+            messageSize = passedMessageSize;
         }
 
         public void run() {
             try {
                 this.startConnection();
-                Message message =  new Message(ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli());
-                analyzePastTimeFrame.newMessageSent(message.getOrderNum());
-                byte[] response = sendSingleMessage(message.createByteArrayFromMessage(messageSize));
-                message = new Message(response);
-                message.setReceivedOnA(ZonedDateTime.now().toInstant().toEpochMilli());
-                analyzePastTimeFrame.newMessageReceived(message);
+
+                Message message =  new Message(ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli(), messageOrderNum);
+                analyzePastTimeFrame.newMessageSent(messageOrderNum);
+                byte[] response = sendSingleMessage(MessageParser.createByteArrayFromMessage(message, messageSize));
+
+                Message responseMessage = MessageParser.createMessageFromByteArray(response);
+                responseMessage.setReceivedOnA(ZonedDateTime.now().toInstant().toEpochMilli());
+                analyzePastTimeFrame.newMessageReceived(responseMessage);
 
                 this.stopConnection();
-            } catch (IOException e) {
+            } catch (Exception e) {
                 e.getStackTrace();
-                log.warning("Exception occurred while sending a message!");
+                LoggerClass.log.warning("Exception occurred while sending a message!");
             }
         }
 
@@ -112,41 +102,16 @@ public class Pitcher {
          * @return byte array response value from input stream
          */
         private byte[] sendSingleMessage(byte[] codedMessage) throws IOException {
-
             //Sending data in TLV format
             out.writeChar('b'); // b for byte
             out.writeInt(codedMessage.length);
             out.write(codedMessage);
 
             in.readChar();
-            if(codedMessage.length != in.readInt()) log.warning("Length of messages does not match!");
+            if(codedMessage.length != in.readInt()) LoggerClass.log.warning("Length of messages does not match!");
             byte[] response = new byte[codedMessage.length];
             in.readFully(response);
             return response;
         }
-
-        public void startConnection() throws IOException {
-            clientSocket = new Socket(hostname, port);
-            out = new DataOutputStream(clientSocket.getOutputStream());
-            in = new DataInputStream(clientSocket.getInputStream());
-        }
-
-        public void stopConnection() throws IOException {
-            in.close();
-            out.close();
-            clientSocket.close();
-        }
-
-        public static void resetAnalysisParameter() {
-            analyzePastTimeFrame = new Analysis();
-        }
-
-        /**
-         * @return Analysis statistics for past time-frame
-         */
-        public static Analysis getAnalysisParameter() {
-            return analyzePastTimeFrame;
-        }
-
     }
 }

@@ -1,46 +1,46 @@
 package main.java.com.company;
 
 import main.java.com.company.socket.Catcher;
+import main.java.com.company.socket.ICatcher;
+import main.java.com.company.socket.IPitcher;
 import main.java.com.company.socket.Pitcher;
-import org.apache.commons.cli.*;
-
-import java.util.logging.Logger;
-
-import static main.java.com.company.utils.ArgumentParser.checkCommandLineParams;
+import main.java.com.company.arguments.ArgumentChecker;
+import main.java.com.company.utils.LoggerClass;
+import org.apache.commons.cli.CommandLine;
 
 
 public class Main {
-    private final static Logger log;
-    static {
-        System.setProperty("java.util.logging.SimpleFormatter.format",
-                "%4$s %5$s%6$s%n");
-        log = Logger.getLogger("Main");
-    }
 
     public static void main(String[] args) {
-        log.info("Starting application `java-tcp-ping` !");
+        LoggerClass.log.info("Starting application `java-tcp-ping` !");
 
         try {
-            CommandLine commandLine = checkCommandLineParams(args);
-            if(commandLine.hasOption("p")) {
-                log.info("The application will be started as Pitcher");
+            CommandLine commandLine = ArgumentChecker.checkCommandLineParams(args);
 
+            int port = Integer.parseInt(commandLine.getOptionValue("port"));
+
+            if(commandLine.hasOption("p")) {
+                LoggerClass.log.info("The application will be started as Pitcher");
+
+                String hostname = commandLine.getOptionValue("h");
                 int messageSize = commandLine.hasOption("size") ? Integer.parseInt(commandLine.getOptionValue("size")) : 300;
                 int messagesPerSecond = commandLine.hasOption("mps") ? Integer.parseInt(commandLine.getOptionValue("mps")) : 1;
 
-                Pitcher client = new Pitcher(commandLine.getOptionValue("h"), Integer.parseInt(commandLine.getOptionValue("port")), messageSize);
-                client.startProducing(messagesPerSecond);
+                IPitcher client = new Pitcher(hostname, port);
+                client.start(messagesPerSecond, messageSize);
             }
 
             if(commandLine.hasOption("c")) {
-                log.info("The application will be started as Catcher");
+                LoggerClass.log.info("The application will be started as Catcher");
 
-                Catcher server = new Catcher();
-                server.start(commandLine.getOptionValue("b"), 10, Integer.parseInt(commandLine.getOptionValue("port")));
+                String bindAddress = commandLine.getOptionValue("b");
+                ICatcher server = new Catcher(bindAddress, port);
+                server.start();
             }
+
         } catch (Exception e) {
             e.printStackTrace();
-            log.info("Exiting application `java-tcp-ping` !");
+            LoggerClass.log.info("Exiting application `java-tcp-ping` !");
         }
     }
 }

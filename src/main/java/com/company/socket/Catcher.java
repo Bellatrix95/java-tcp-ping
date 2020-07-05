@@ -1,45 +1,50 @@
 package main.java.com.company.socket;
 
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
+import main.java.com.company.messages.Message;
+import main.java.com.company.messages.MessageParser;
+import main.java.com.company.utils.LoggerClass;
+
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
-import java.util.logging.Logger;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * Socket server class for handling incoming messages.
  *
  * @author Ivana Salmanić
  */
-
-public class Catcher {
-
-    private static final Logger log = Logger.getLogger("Catcher");
+public class Catcher implements ICatcher {
+    private ServerSocket serverSocket;
 
     /**
      * @param bind socket server IP
-     * @param numOfConnections number of connections
      * @param port socket server port number
      */
-
-    public void start(String bind, int numOfConnections, int port) throws IOException {
-        ServerSocket serverSocket = new ServerSocket(port, numOfConnections,InetAddress.getByName(bind));
-
-        while (true)
-            new Thread(new ClientHandler(serverSocket.accept())).start();
+    public Catcher(String bind, int port) throws IOException {
+        serverSocket = new ServerSocket(port, 10, InetAddress.getByName(bind));
     }
 
-    private static class ClientHandler implements Runnable {
-        private Socket clientSocket;
-        private DataOutputStream out;
-        private DataInputStream in;
+    public void start() {
+        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(2);
 
-        public ClientHandler(Socket socket) {
-            this.clientSocket = socket;
+        while (true) {
+            try {
+                executor.execute((new MessageHandler(serverSocket.accept())));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static class MessageHandler extends SocketDataStream implements Runnable {
+
+        MessageHandler(Socket socket) {
+            super.clientSocket = socket;
         }
 
         public void run() {
@@ -48,33 +53,23 @@ public class Catcher {
 
                 if(in.readChar() != 'b') throw new RuntimeException("The Catcher can only read byte type messages!");
 
-                byte[] messageBytes = new byte[in.readInt()];
+                int length = in.readInt();
+                byte[] messageBytes = new byte[length];
                 in.readFully(messageBytes);
                 long receivedOnB = ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli();
 
-                Message message = new Message(messageBytes);
+                Message message = MessageParser.createMessageFromByteArray(messageBytes);
                 message.setReceivedOnB(receivedOnB);
                 message.setSendToA(ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli());
                 out.writeChar('b');
-                out.writeInt(messageBytes.length);
-                out.write(message.createByteArrayFromMessage(messageBytes.length));
+                out.writeInt(length);
+                out.write(MessageParser.createByteArrayFromMessage(message, length));
 
                 this.stopConnection();
             } catch (Exception e) {
                 e.printStackTrace();
-                log.warning("Exception occurred while handling incoming message!");
+                LoggerClass.log.warning("Exception occurred while handling incoming message!");
             }
-        }
-
-        private void startConnection() throws IOException {
-            out = new DataOutputStream(clientSocket.getOutputStream());
-            in = new DataInputStream(clientSocket.getInputStream());
-        }
-
-        private void stopConnection() throws IOException {
-            in.close();
-            out.close();
-            clientSocket.close();
         }
     }
 }
