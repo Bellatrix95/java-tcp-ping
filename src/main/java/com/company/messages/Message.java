@@ -7,7 +7,7 @@ import java.io.Serializable;
  *
  * @author Ivana Salmanić
  */
-public class Message implements Serializable {
+public class Message implements Serializable, IMessage {
     private int orderNum;
     private long sendToB;
     private long receivedOnB;

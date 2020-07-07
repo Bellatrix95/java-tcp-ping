@@ -10,8 +10,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * Socket server class for handling incoming messages.
@@ -30,7 +30,7 @@ public class Catcher implements ICatcher {
     }
 
     public void start() {
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(2);
+        ExecutorService executor = Executors.newFixedThreadPool(2);
 
         while (true) {
             try {

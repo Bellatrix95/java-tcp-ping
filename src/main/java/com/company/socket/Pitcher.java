@@ -1,8 +1,7 @@
 package main.java.com.company.socket;
 
 import com.google.common.util.concurrent.RateLimiter;
-import main.java.com.company.analysis.Analysis;
-import main.java.com.company.analysis.AtomicMessageCounter;
+import main.java.com.company.analysis.*;
 import main.java.com.company.messages.Message;
 import main.java.com.company.messages.MessageParser;
 import main.java.com.company.utils.LoggerClass;
@@ -11,8 +10,8 @@ import java.io.IOException;
 import java.net.Socket;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
 
 /**
  * Socket client class for sending byte messages to socket server.
@@ -39,18 +38,22 @@ public class Pitcher implements IPitcher{
     public void start(int messagesPerSecond, int messageSize) {
         // rate is "messagesPerSecond permits per second";
         final RateLimiter rateLimiter = RateLimiter.create(messagesPerSecond);
-        ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(4);
-        Analysis analyzePastTimeFrame = new Analysis();
+        ExecutorService executor = Executors.newFixedThreadPool(2);
+        ISentMessageAnalytics sentMessageAnalytics = new SentMessageAnalytics();
+        IResponseMessageAnalysis responseMessageAnalysis = new ResponseMessageAnalytics(sentMessageAnalytics);
         MessageSender.setMessageSize(messageSize);
 
         while(true) {
             rateLimiter.acquire();
             if(AtomicMessageCounter.getMessageCounter() % messagesPerSecond == 0 ) {
-                LoggerClass.log.info(LoggerClass.parseStatisticsObject(analyzePastTimeFrame.getNetworkStats()));
-                analyzePastTimeFrame = new Analysis();
+                LoggerClass.log.info(LoggerClass.formatNetworkStatisticsForLog(sentMessageAnalytics, responseMessageAnalysis));
+                sentMessageAnalytics = new SentMessageAnalytics();
+                responseMessageAnalysis = new ResponseMessageAnalytics(sentMessageAnalytics);
             }
             try {
-                executor.execute(new MessageSender(new Socket(hostname, port), AtomicMessageCounter.incrementMessageCounterAndReturn(), analyzePastTimeFrame));
+                int newMessageOrderNum = AtomicMessageCounter.incrementMessageCounterAndReturn();
+                sentMessageAnalytics.newMessageSent(newMessageOrderNum);
+                executor.execute(new MessageSender(new Socket(hostname, port), newMessageOrderNum, responseMessageAnalysis));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -58,19 +61,19 @@ public class Pitcher implements IPitcher{
     }
 
     private static class MessageSender extends SocketDataStream implements Runnable {
-        private Analysis analyzePastTimeFrame;
+        private IResponseMessageAnalysis responseMessageAnalysis;
         private int messageOrderNum;
         private static int messageSize;
 
         /**
-         * @param socket socket server
+         * @param socket socket client
          * @param messageOrderNum message identification number
-         * @param analyzePastTimeFrame analysis object for current time frame
+         * @param responseMessageAnalysis analysis object for current time frame
          */
-        MessageSender(Socket socket, int messageOrderNum, Analysis analyzePastTimeFrame) {
+        MessageSender(Socket socket, int messageOrderNum, IResponseMessageAnalysis responseMessageAnalysis) {
             super.clientSocket = socket;
             this.messageOrderNum = messageOrderNum;
-            this.analyzePastTimeFrame = analyzePastTimeFrame;
+            this.responseMessageAnalysis = responseMessageAnalysis;
         }
 
         static void setMessageSize(int passedMessageSize) {
@@ -82,12 +85,11 @@ public class Pitcher implements IPitcher{
                 this.startConnection();
 
                 Message message =  new Message(ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli(), messageOrderNum);
-                analyzePastTimeFrame.newMessageSent(messageOrderNum);
                 byte[] response = sendSingleMessage(MessageParser.createByteArrayFromMessage(message, messageSize));
 
                 Message responseMessage = MessageParser.createMessageFromByteArray(response);
-                responseMessage.setReceivedOnA(ZonedDateTime.now().toInstant().toEpochMilli());
-                analyzePastTimeFrame.newMessageReceived(responseMessage);
+                responseMessage.setReceivedOnA(ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli());
+                responseMessageAnalysis.newMessageReceived(responseMessage);
 
                 this.stopConnection();
             } catch (Exception e) {
@@ -108,7 +110,9 @@ public class Pitcher implements IPitcher{
             out.write(codedMessage);
 
             in.readChar();
+
             if(codedMessage.length != in.readInt()) LoggerClass.log.warning("Length of messages does not match!");
+
             byte[] response = new byte[codedMessage.length];
             in.readFully(response);
             return response;

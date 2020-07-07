@@ -3,6 +3,11 @@ package main.java.com.company.arguments;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
 
+/**
+ * Helper class for defining possible arguments passed to the application.
+ *
+ * @author Ivana Salmanić
+ */
 class ArgumentOption {
 
     private static Option createPitcherOption() {

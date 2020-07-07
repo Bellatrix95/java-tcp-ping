@@ -1,38 +1,40 @@
 package main.java.com.company.utils;
 
+import main.java.com.company.analysis.IResponseMessageAnalysis;
+import main.java.com.company.analysis.ISentMessageAnalytics;
+
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Map;
-import java.util.logging.Logger;
 
 /**
- * Logger configuration class
+ * LoggerClass configuration class
  *
  * @author Ivana Salmanić
  */
 public final class LoggerClass {
-    public final static Logger log;
+    public final static java.util.logging.Logger log;
     private static final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MM/dd/yyyy - HH:mm:ss z");
     static {
         System.setProperty("java.util.logging.SimpleFormatter.format",
                 "%4$s %5$s%6$s%n");
-        log = Logger.getLogger("LoggerClass");
+        log = java.util.logging.Logger.getLogger("LoggerClass");
     }
 
-    /* change somehow */
     /**
-     * @param statsForLastTimeFrame statistics object that needs to be logged
+     * @param sentMessageAnalytics statistics object for sent messages
+     * @param responseMessageAnalysis statistics object for received messages
      * @return String value containing statistics for past time-frame
      */
-    public static String parseStatisticsObject(Map<String, Object> statsForLastTimeFrame) {
-        ZonedDateTime startTime = (ZonedDateTime) statsForLastTimeFrame.get("startTime");
+    public static String formatNetworkStatisticsForLog(ISentMessageAnalytics sentMessageAnalytics, IResponseMessageAnalysis responseMessageAnalysis) {
+        ZonedDateTime startTime = sentMessageAnalytics.getStartTime();
         StringBuilder formatForLog = new StringBuilder(startTime.format(formatter)).append(" : ");
 
-        statsForLastTimeFrame.remove("startTime");
-
-        for (String key : statsForLastTimeFrame.keySet()) {
-            formatForLog.append(key).append("=").append(statsForLastTimeFrame.get(key)).append("  ");
-        }
+        formatForLog.append("numMessagesSent").append("=").append(sentMessageAnalytics.getSentMessagesCount()).append("  ");
+        formatForLog.append("numMessagesLost").append("=").append(sentMessageAnalytics.getSentMessagesCount() - responseMessageAnalysis.getMessagesReceived()).append("  ");
+        formatForLog.append("averageTimeAB").append("=").append(responseMessageAnalysis.getAverageTimeAB()).append("  ");
+        formatForLog.append("averageTimeBA").append("=").append(responseMessageAnalysis.getAverageTimeBA()).append("  ");
+        formatForLog.append("averageTimeABA").append("=").append(responseMessageAnalysis.getAverageTimeABA()).append("  ");
+        formatForLog.append("maxTimeABA").append("=").append(responseMessageAnalysis.getMaxTimeABA()).append("  ");
 
         formatForLog.append("\n");
         return formatForLog.toString();
