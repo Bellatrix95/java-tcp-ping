@@ -26,6 +26,9 @@ public final class LoggerClass {
      * @return String value containing statistics for past time-frame
      */
     public static String formatNetworkStatisticsForLog(ISentMessageAnalytics sentMessageAnalytics, IResponseMessageAnalysis responseMessageAnalysis) {
+
+        if(sentMessageAnalytics.getSentMessagesCount() == 0) return "Message producing has started!";
+
         ZonedDateTime startTime = sentMessageAnalytics.getStartTime();
         StringBuilder formatForLog = new StringBuilder(startTime.format(formatter)).append(" : ");
 

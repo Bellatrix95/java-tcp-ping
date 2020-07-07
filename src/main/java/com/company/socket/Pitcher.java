@@ -8,8 +8,8 @@ import main.java.com.company.utils.LoggerClass;
 
 import java.io.IOException;
 import java.net.Socket;
+import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -84,11 +84,11 @@ public class Pitcher implements IPitcher{
             try {
                 this.startConnection();
 
-                Message message =  new Message(ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli(), messageOrderNum);
+                Message message =  new Message(LocalDateTime.now().atZone(ZoneId.of("UTC")).toInstant().toEpochMilli(), messageOrderNum);
                 byte[] response = sendSingleMessage(MessageParser.createByteArrayFromMessage(message, messageSize));
 
                 Message responseMessage = MessageParser.createMessageFromByteArray(response);
-                responseMessage.setReceivedOnA(ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli());
+                responseMessage.setReceivedOnA(LocalDateTime.now().atZone(ZoneId.of("UTC")).toInstant().toEpochMilli());
                 responseMessageAnalysis.newMessageReceived(responseMessage);
 
                 this.stopConnection();
