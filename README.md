@@ -42,7 +42,7 @@ Arguments mandatory for starting **Pitcher** are listed in the table below:
 Arguments mandatory for starting **Catcher** are listed in the table below:
 
 | Parameter | Default | Example value | Description 
-| -----  | -----   | ----- 
+| -----  | -----   | ----- | ----- 
 | c | |  | Flag used for starting Catcher
 | bind | |  localhost | Socket server port IP address
 | port | | 3000 | Socket server port
