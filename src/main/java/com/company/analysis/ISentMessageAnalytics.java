@@ -6,7 +6,10 @@ import java.util.ArrayList;
 public interface ISentMessageAnalytics {
 
     void newMessageSent(int messageOrderNum);
+
     ArrayList<Integer> getMessagesOrderNums();
+
     ZonedDateTime getStartTime();
+
     int getSentMessagesCount();
 }
