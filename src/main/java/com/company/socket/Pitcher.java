@@ -8,8 +8,8 @@ import main.java.com.company.utils.LoggerClass;
 
 import java.io.IOException;
 import java.net.Socket;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -18,9 +18,10 @@ import java.util.concurrent.Executors;
  *
  * @author Ivana Salmanić
  */
-public class Pitcher implements IPitcher{
+public class Pitcher implements IPitcher {
     private String hostname;
     private int port;
+    private int numOfThreadsUsed = 2;
 
     /**
      * @param hostname socket server hostname
@@ -32,13 +33,20 @@ public class Pitcher implements IPitcher{
     }
 
     /**
+     * @param numOfThreadsUsed number of threads for producing messages
+     */
+    public void setNumOfThreadsUsed(int numOfThreadsUsed) {
+        this.numOfThreadsUsed = numOfThreadsUsed;
+    }
+
+    /**
      * @param messagesPerSecond number of messages per second
      * @param messageSize message size in bytes
      */
     public void start(int messagesPerSecond, int messageSize) {
         // rate is "messagesPerSecond permits per second";
         final RateLimiter rateLimiter = RateLimiter.create(messagesPerSecond);
-        ExecutorService executor = Executors.newFixedThreadPool(2);
+        ExecutorService executor = Executors.newFixedThreadPool(numOfThreadsUsed);
         ISentMessageAnalytics sentMessageAnalytics = new SentMessageAnalytics();
         IResponseMessageAnalysis responseMessageAnalysis = new ResponseMessageAnalytics(sentMessageAnalytics);
         MessageSender.setMessageSize(messageSize);
@@ -84,11 +92,11 @@ public class Pitcher implements IPitcher{
             try {
                 this.startConnection();
 
-                Message message =  new Message(LocalDateTime.now().atZone(ZoneId.of("UTC")).toInstant().toEpochMilli(), messageOrderNum);
+                Message message =  new Message(ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli(), messageOrderNum);
                 byte[] response = sendSingleMessage(MessageParser.createByteArrayFromMessage(message, messageSize));
 
                 Message responseMessage = MessageParser.createMessageFromByteArray(response);
-                responseMessage.setReceivedOnA(LocalDateTime.now().atZone(ZoneId.of("UTC")).toInstant().toEpochMilli());
+                responseMessage.setReceivedOnA(ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli());
                 responseMessageAnalysis.newMessageReceived(responseMessage);
 
                 this.stopConnection();

@@ -2,6 +2,7 @@ package test;
 
 
 import main.java.com.company.arguments.ArgumentChecker;
+import main.java.com.company.arguments.IArgumentChecker;
 import org.apache.commons.cli.ParseException;
 import org.junit.Test;
 
@@ -22,7 +23,8 @@ public class ArgumentCheckerTest {
     public void givenArgsWithoutFlag_whenChecked_shouldThrowParseException() {
         String expectedMessage = "The application will exit, Pitcher or Catcher flag isn't set! ";
         try {
-            ArgumentChecker.checkCommandLineParams(argsWithoutFlag);
+            IArgumentChecker argumentChecker = new ArgumentChecker();
+            argumentChecker.checkArgs(argsWithoutFlag);
             fail();
         } catch (ParseException e) {
             assertEquals(expectedMessage, e.getMessage());
@@ -32,7 +34,8 @@ public class ArgumentCheckerTest {
     @Test
     public void givenArgsForPitcher_whenChecked_shouldPassWithoutAnError() {
         try {
-            ArgumentChecker.checkCommandLineParams(argsForPitcher);
+            IArgumentChecker argumentChecker = new ArgumentChecker();
+            argumentChecker.checkArgs(argsForPitcher);
             assertTrue(true);
         } catch (ParseException e) {
             fail();
@@ -42,7 +45,8 @@ public class ArgumentCheckerTest {
     @Test
     public void givenArgsForCatcher_whenChecked_shouldPassWithoutAnError() {
         try {
-            ArgumentChecker.checkCommandLineParams(argsForCatcher);
+            IArgumentChecker argumentChecker = new ArgumentChecker();
+            argumentChecker.checkArgs(argsForCatcher);
             assertTrue(true);
         } catch (ParseException e) {
             fail();
@@ -53,7 +57,8 @@ public class ArgumentCheckerTest {
     public void givenArgsPitcherWrongMessageSize_whenChecked_shouldThrowParseException() {
         String expectedMessage = "Message size can be in the range of (50,3000)!";
         try {
-            ArgumentChecker.checkCommandLineParams(argsPitcherWrongMessageSize);
+            IArgumentChecker argumentChecker = new ArgumentChecker();
+            argumentChecker.checkArgs(argsPitcherWrongMessageSize);
             fail();
         } catch (ParseException e) {
             assertEquals(expectedMessage, e.getMessage());

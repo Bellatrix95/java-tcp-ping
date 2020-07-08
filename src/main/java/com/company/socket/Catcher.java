@@ -8,8 +8,8 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.time.LocalDateTime;
 import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -20,6 +20,7 @@ import java.util.concurrent.Executors;
  */
 public class Catcher implements ICatcher {
     private ServerSocket serverSocket;
+    private int numOfThreadsUsed = 2; //default to 2
 
     /**
      * @param bind socket server IP
@@ -29,8 +30,15 @@ public class Catcher implements ICatcher {
         serverSocket = new ServerSocket(port, 10, InetAddress.getByName(bind));
     }
 
+    /**
+     * @param numOfThreadsUsed number of threads for handling incoming messages
+     */
+    public void setNumOfThreadsUsed(int numOfThreadsUsed) {
+        this.numOfThreadsUsed = numOfThreadsUsed;
+    }
+
     public void start() {
-        ExecutorService executor = Executors.newFixedThreadPool(2);
+        ExecutorService executor = Executors.newFixedThreadPool(numOfThreadsUsed);
 
         while (true) {
             try {
@@ -56,11 +64,11 @@ public class Catcher implements ICatcher {
                 int length = in.readInt();
                 byte[] messageBytes = new byte[length];
                 in.readFully(messageBytes);
-                long receivedOnB = LocalDateTime.now().atZone(ZoneId.of("UTC")).toInstant().toEpochMilli();
+                long receivedOnB = ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli();
 
                 Message message = MessageParser.createMessageFromByteArray(messageBytes);
                 message.setReceivedOnB(receivedOnB);
-                message.setSendToA(LocalDateTime.now().atZone(ZoneId.of("UTC")).toInstant().toEpochMilli());
+                message.setSendToA(ZonedDateTime.now(ZoneId.of("UTC")).toInstant().toEpochMilli());
                 out.writeChar('b');
                 out.writeInt(length);
                 out.write(MessageParser.createByteArrayFromMessage(message, length));
