@@ -70,6 +70,15 @@ class ArgumentOption {
                 .build();
     }
 
+    private static Option createNumThreadsOption() {
+        return Option.builder("numThreads")
+                .required(false)
+                .desc("Number of threads for handling incoming/sending messages.")
+                .longOpt("numThreads")
+                .hasArg()
+                .build();
+    }
+
     /**
      * Creates supported argument options object
      * @return supported argument options
@@ -83,7 +92,7 @@ class ArgumentOption {
         options.addOption(createPortOption());
         options.addOption(createMessageSizeOption());
         options.addOption(createMPSOption());
-
+        options.addOption(createNumThreadsOption());
         return options;
     }
 }

@@ -21,7 +21,7 @@ import java.util.concurrent.Executors;
 public class Pitcher implements IPitcher {
     private String hostname;
     private int port;
-    private int numOfThreadsUsed = 2;
+    private int numOfThreadsUsed;
 
     /**
      * @param hostname socket server hostname

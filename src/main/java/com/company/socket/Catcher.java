@@ -20,7 +20,7 @@ import java.util.concurrent.Executors;
  */
 public class Catcher implements ICatcher {
     private ServerSocket serverSocket;
-    private int numOfThreadsUsed = 2; //default to 2
+    private int numOfThreadsUsed;
 
     /**
      * @param bind socket server IP

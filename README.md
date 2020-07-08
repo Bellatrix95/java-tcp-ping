@@ -37,7 +37,7 @@ Arguments mandatory for starting **Pitcher** are listed in the table below:
 | port | | 3000 | Socket server port
 | mps | 1 | 50 | Number of messages per second
 | size | 300 | 50 | Message size in byte in range (50, 3000)
-
+| numThreads | 2 | 4 | Number of threads used for sending messages
 
 Arguments mandatory for starting **Catcher** are listed in the table below:
 
@@ -46,6 +46,7 @@ Arguments mandatory for starting **Catcher** are listed in the table below:
 | c | |  | Flag used for starting Catcher
 | bind | |  localhost | Socket server port IP address
 | port | | 3000 | Socket server port
+| numThreads | 2 | 4 | Number of threads used for handling incoming messages
 
 Example commands:
 
